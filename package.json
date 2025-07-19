@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "一个丰富多彩的回忆录网站",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
@@ -34,7 +35,7 @@
     "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "init-db": "ts-node src/scripts/init-db.ts"
+    "init-db": "node src/scripts/init-db.cjs"
   },
   "eslintConfig": {
     "extends": [
