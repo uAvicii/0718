@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -7,8 +7,9 @@ import {
   InputAdornment,
   Chip,
   Paper,
-  IconButton,
   Fab,
+  CircularProgress,
+  Alert
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -17,22 +18,58 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useMemory } from '../contexts/MemoryContext';
 import MemoryCard from '../components/MemoryCard';
+import { getMemories } from '../api/memories';
+
+interface Memory {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  mood?: string;
+  location?: string;
+  tags?: string[];
+  images?: string[];
+}
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const { memories, searchMemories, filterByTag } = useMemory();
+  const [memories, setMemories] = useState<Memory[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchMemories() {
+      try {
+        setLoading(true);
+        const result = await getMemories();
+        if (result.error) {
+          setError(result.error);
+        } else {
+          setMemories(result.memories || []);
+        }
+      } catch (err) {
+        setError('获取记忆列表失败，请稍后再试');
+        console.error('获取记忆列表错误:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchMemories();
+  }, []);
 
   // 获取所有标签及其出现次数
   const getAllTags = () => {
     const tagCount: Record<string, number> = {};
     memories.forEach(memory => {
-      memory.tags.forEach(tag => {
-        tagCount[tag] = (tagCount[tag] || 0) + 1;
-      });
+      if (memory.tags) {
+        memory.tags.forEach(tag => {
+          tagCount[tag] = (tagCount[tag] || 0) + 1;
+        });
+      }
     });
     return Object.entries(tagCount)
       .sort((a, b) => b[1] - a[1])
@@ -41,17 +78,48 @@ const HomePage: React.FC = () => {
 
   const popularTags = getAllTags();
 
+  // 搜索记忆
+  const searchMemories = (query: string) => {
+    return memories.filter(memory =>
+      memory.title.toLowerCase().includes(query.toLowerCase()) ||
+      memory.content.toLowerCase().includes(query.toLowerCase())
+    );
+  };
+
+  // 按标签过滤
+  const filterByTag = (tag: string) => {
+    return memories.filter(memory =>
+      memory.tags && memory.tags.includes(tag)
+    );
+  };
+
   // 根据搜索和标签过滤回忆
   const filteredMemories = selectedTag
     ? filterByTag(selectedTag)
     : searchQuery
-    ? searchMemories(searchQuery)
-    : memories;
+      ? searchMemories(searchQuery)
+      : memories;
 
   const handleTagClick = (tag: string) => {
     setSelectedTag(selectedTag === tag ? null : tag);
     setSearchQuery('');
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ my: 2 }}>
+        {error}
+      </Alert>
+    );
+  }
 
   return (
     <Box>
