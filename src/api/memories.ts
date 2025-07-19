@@ -1,9 +1,9 @@
-import { getAllMemories, getMemoryById, createMemory, updateMemory, deleteMemory } from '../lib/db';
+import { getAllMemories as getAll, getMemoryById as getById, createMemory as create, updateMemory as update, deleteMemory as remove } from '../lib/edge-config';
 
 // 获取所有记忆
 export async function getMemories() {
   try {
-    const memories = await getAllMemories();
+    const memories = await getAll();
     return { memories, error: null };
   } catch (error) {
     console.error('获取记忆列表失败:', error);
@@ -12,9 +12,9 @@ export async function getMemories() {
 }
 
 // 获取单个记忆
-export async function getMemory(id: number) {
+export async function getMemory(id: string) {
   try {
-    const memory = await getMemoryById(id);
+    const memory = await getById(id);
     if (!memory) {
       return { memory: null, error: '记忆不存在' };
     }
@@ -43,7 +43,7 @@ export async function addMemory(data: {
       return { memory: null, error: '标题、内容和日期为必填项' };
     }
 
-    const newMemory = await createMemory({
+    const newMemory = await create({
       title,
       content,
       date: new Date(date),
@@ -61,7 +61,7 @@ export async function addMemory(data: {
 }
 
 // 更新记忆
-export async function editMemory(id: number, data: {
+export async function editMemory(id: string, data: {
   title?: string;
   content?: string;
   date?: string;
@@ -74,12 +74,12 @@ export async function editMemory(id: number, data: {
     const { title, content, date, mood, location, tags, images } = data;
 
     // 检查记忆是否存在
-    const existingMemory = await getMemoryById(id);
+    const existingMemory = await getById(id);
     if (!existingMemory) {
       return { memory: null, error: '记忆不存在' };
     }
 
-    const updatedMemory = await updateMemory(id, {
+    const updatedMemory = await update(id, {
       title,
       content,
       date: date ? new Date(date) : undefined,
@@ -97,15 +97,15 @@ export async function editMemory(id: number, data: {
 }
 
 // 删除记忆
-export async function removeMemory(id: number) {
+export async function removeMemory(id: string) {
   try {
     // 检查记忆是否存在
-    const existingMemory = await getMemoryById(id);
+    const existingMemory = await getById(id);
     if (!existingMemory) {
       return { success: false, error: '记忆不存在' };
     }
 
-    await deleteMemory(id);
+    await remove(id);
     return { success: true, error: null };
   } catch (error) {
     console.error(`删除记忆ID=${id}失败:`, error);
